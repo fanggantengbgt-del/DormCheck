@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumen: watch YouTube, browse everywhere</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..600&family=Manrope:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#eef0f5; --surface:#ffffff; --ink:#141824; --muted:#667087; --line:#d9deea;
+  --accent:#1f6b6b; --accent-ink:#ffffff; --glow:rgba(31,107,107,.14); --ring:rgba(31,107,107,.2);
+  --stage:#0b0e15; --shadow:0 40px 80px -40px rgba(20,24,36,.45); --danger:#b4443a;
+  color-scheme:light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1017; --surface:#151a24; --ink:#eceef5; --muted:#8c93a6; --line:#262d3b;
+    --accent:#7fc4c0; --accent-ink:#06201f; --glow:rgba(127,196,192,.16); --ring:rgba(127,196,192,.22);
+    --stage:#06080d; --shadow:0 40px 90px -40px rgba(0,0,0,.9); --danger:#e08074; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1017; --surface:#151a24; --ink:#eceef5; --muted:#8c93a6; --line:#262d3b;
+  --accent:#7fc4c0; --accent-ink:#06201f; --glow:rgba(127,196,192,.16); --ring:rgba(127,196,192,.22);
+  --stage:#06080d; --shadow:0 40px 90px -40px rgba(0,0,0,.9); --danger:#e08074; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:radial-gradient(900px 480px at 50% -120px,var(--glow),transparent 70%),var(--bg);color:var(--ink);
+  font:400 16px/1.6 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:26px 22px 60px}
+.brand{display:flex;align-items:center;gap:11px;font:500 22px/1 "Bodoni Moda",Georgia,"Times New Roman",serif;letter-spacing:.02em}
+.moon{width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px var(--ring),0 0 26px var(--accent);position:relative}
+.moon::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--bg);transform:translate(4px,-2px) scale(.82)}
+h1{font:400 clamp(38px,8vw,68px)/1.04 "Bodoni Moda",Georgia,"Times New Roman",serif;letter-spacing:-.015em;margin:60px 0 16px;max-width:14ch}
+.lede{color:var(--muted);max-width:44ch;margin:0 0 32px;font-size:17px}
+.field{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 7px 7px 24px;transition:border-color .2s,box-shadow .2s}
+.field:focus-within{border-color:var(--accent);box-shadow:0 0 0 5px var(--ring)}
+.field.bad{border-color:var(--danger)}
+.field input{flex:1;min-width:0;border:0;outline:0;background:none;color:inherit;font:inherit;padding:11px 0}
+.field input::placeholder{color:var(--muted)}
+.btns{display:flex;gap:4px}
+button{font:600 14px/1 Manrope,system-ui,sans-serif;cursor:pointer;border-radius:999px;border:1px solid transparent;padding:13px 20px;display:inline-flex;align-items:center;gap:9px;color:var(--ink);background:none;transition:transform .15s,filter .2s,border-color .2s,color .2s}
+button:active:not(:disabled){transform:scale(.97)}
+button:disabled{opacity:.38;cursor:not-allowed}
+button:focus-visible,kbd:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+button svg{width:17px;height:17px;flex:none}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.primary:not(:disabled):hover{filter:brightness(1.08)}
+.ghost{border-color:var(--line);background:var(--surface)}
+.ghost:not(:disabled):hover{border-color:var(--accent)}
+.quiet{color:var(--muted);padding-inline:14px}
+.quiet:not(:disabled):hover{color:var(--ink)}
+.hint{color:var(--muted);font-size:14px;margin:12px 0 0 24px;min-height:22px}
+.hint.err{color:var(--danger)}
+.theatre{position:relative;margin-top:30px}
+.theatre::before{content:"";position:absolute;inset:6% 4% -4%;background:var(--accent);filter:blur(70px);opacity:.1;border-radius:40px;transition:opacity .8s}
+.theatre:has([data-mode=play])::before{opacity:.26}
+.stage{position:relative;aspect-ratio:16/9;border-radius:24px;overflow:hidden;background:radial-gradient(620px 300px at 50% 25%,#1a2130,var(--stage));border:1px solid var(--line);box-shadow:var(--shadow)}
+.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.empty,.away{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:24px;color:#b9c0d2}
+.empty b,.away b{font:400 clamp(20px,4vw,28px)/1.2 "Bodoni Moda",Georgia,serif;color:#eceef5}
+.empty span,.away span{font-size:14px}
+.stage[data-mode=empty] .empty,.stage[data-mode=pip] .away{display:flex}
+.ring{width:58px;height:58px;border-radius:50%;border:1px solid #3a4358;display:grid;place-items:center;margin-bottom:8px}
+.ring svg{width:20px;height:20px;fill:#b9c0d2;margin-left:3px}
+.away button{margin-top:10px;background:#eceef5;color:#0d1017}
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:20px}
+.meta{color:var(--muted);font-size:14px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.tip{margin:44px 0 0;color:var(--muted);font-size:14px;max-width:62ch}
+kbd{font:600 12px Manrope,system-ui,sans-serif;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:2px 7px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);max-width:min(440px,calc(100% - 32px));background:var(--ink);color:var(--bg);padding:13px 20px;border-radius:16px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:5}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:540px){
+  .field{flex-wrap:wrap;border-radius:26px;padding:10px 10px 10px 18px}
+  .field input{flex:1 1 100%}
+  .btns{margin-left:auto}
+  .hint{margin-left:12px}
+  .stage{border-radius:16px}
+  .acts{width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="moon" aria-hidden="true"></span>Lumen</div>
+
+  <h1>Watch here. Browse everywhere.</h1>
+  <p class="lede">Paste a YouTube link, then float the player above your other tabs and keep watching while you work.</p>
+
+  <form id="form" novalidate>
+    <div class="field" id="field">
+      <input id="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste a YouTube link…" aria-label="YouTube link">
+      <div class="btns">
+        <button type="button" id="paste" class="quiet">Paste</button>
+        <button type="submit" class="primary">Watch</button>
+      </div>
+    </div>
+    <p class="hint" id="hint">Works with youtube.com, youtu.be, Shorts and live links. Start times are kept.</p>
+  </form>
+
+  <div class="theatre">
+    <div class="stage" id="stage" data-mode="empty">
+      <div class="empty">
+        <div class="ring"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></div>
+        <b>Nothing playing yet</b>
+        <span>Paste a link above to begin.</span>
+      </div>
+      <div class="away">
+        <b>Playing in a floating window</b>
+        <span>You’re free to browse other tabs.</span>
+        <button type="button" id="back">Bring it back</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="meta" id="meta">Ready when you are.</div>
+    <div class="acts">
+      <button type="button" id="pip" class="primary" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="3"/><rect x="11.5" y="11" width="8" height="6" rx="1.5" fill="currentColor" stroke="none"/></svg>
+        Picture-in-picture
+      </button>
+      <button type="button" id="copy" class="ghost" disabled>Copy link</button>
+      <button type="button" id="clear" class="quiet" disabled>Clear</button>
+    </div>
+  </div>
+
+  <p class="tip">Press <kbd>P</kbd> to pop the player out. Floating mode works in Chrome and Edge on desktop. In other browsers, right-click the video twice and choose “Picture in picture”.</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const stage=$('#stage'), input=$('#url'), field=$('#field'), hint=$('#hint'), meta=$('#meta');
+  const pipBtn=$('#pip'), copyBtn=$('#copy'), clearBtn=$('#clear'), toastEl=$('#toast');
+  const S={id:null,start:0,time:0,playing:true,heard:0,pip:null,timer:null};
+  const YT=/^https:\/\/www\.youtube(-nocookie)?\.com$/;
+  let toastT;
+
+  function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove('show'),4200);}
+  function fmt(s){s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(r).padStart(2,'0');}
+  function secs(v){
+    if(!v) return 0; if(/^\d+$/.test(v)) return +v;
+    const m=v.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+    return m?(+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0):0;
+  }
+  function parse(raw){
+    raw=raw.trim(); if(!raw) return null;
+    if(/^[\w-]{11}$/.test(raw)) return {id:raw,start:0};
+    let u; try{u=new URL(/^https?:\/\//i.test(raw)?raw:'https://'+raw);}catch(e){return null}
+    const h=u.hostname.replace(/^(www|m|music)\./,''); let id=null;
+    if(h==='youtu.be') id=u.pathname.slice(1).split('/')[0];
+    else if(h==='youtube.com'||h==='youtube-nocookie.com'){
+      if(u.pathname==='/watch') id=u.searchParams.get('v');
+      else{const m=u.pathname.match(/^\/(?:embed|shorts|live|v)\/([\w-]{11})/); if(m) id=m[1];}
+    } else return null;
+    if(!id||!/^[\w-]{11}$/.test(id)) return null;
+    return {id,start:secs(u.searchParams.get('t')||u.searchParams.get('start')||'')};
+  }
+
+  function onMsg(e){
+    if(!YT.test(e.origin)) return;
+    let d=e.data; if(typeof d==='string'){try{d=JSON.parse(d)}catch(x){return}}
+    const i=d&&d.info; if(!i) return;
+    S.heard=Date.now();
+    if(typeof i.currentTime==='number') S.time=i.currentTime;
+    if(typeof i.playerState==='number'){S.playing=i.playerState===1||i.playerState===3; if(i.playerState===0) S.time=0;}
+  }
+  window.addEventListener('message',onMsg);
+
+  function makeFrame(doc,start,auto){
+    const f=doc.createElement('iframe');
+    f.src='https://www.youtube-nocookie.com/embed/'+S.id+'?enablejsapi=1&rel=0&playsinline=1&start='+start+'&autoplay='+(auto?1:0);
+    f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write';
+    f.allowFullscreen=true; f.title='YouTube video player';
+    f.addEventListener('load',()=>{
+      const t0=Date.now(); let n=0;
+      const t=setInterval(()=>{
+        if(!f.isConnected||S.heard>t0||++n>20) return clearInterval(t);
+        try{f.contentWindow.postMessage(JSON.stringify({event:'listening',id:'lumen',channel:'widget'}),'*');}catch(x){}
+      },350);
+    });
+    return f;
+  }
+  function setFrame(f){const o=stage.querySelector('iframe'); if(o) o.remove(); if(f) stage.prepend(f);}
+  function setMode(m){
+    stage.dataset.mode=m;
+    const has=!!S.id; pipBtn.disabled=copyBtn.disabled=clearBtn.disabled=!has;
+    pipBtn.lastChild.textContent=m==='pip'?' Bring it back':' Picture-in-picture';
+    meta.textContent=!has?'Ready when you are.':m==='pip'?'Floating above your other tabs.':(S.start?'Now playing, starting at '+fmt(S.start)+'.':'Now playing.');
+  }
+
+  function load(p){
+    closePip();
+    Object.assign(S,{id:p.id,start:p.start,time:p.start,playing:true,heard:0});
+    setFrame(makeFrame(document,p.start,true)); setMode('play');
+  }
+
+  function closePip(){
+    const w=S.pip; if(!w) return;
+    S.pip=null; clearInterval(S.timer);
+    try{w.close();}catch(x){}
+  }
+
+  async function openPip(){
+    if(!S.id) return;
+    if(S.pip){ S.pip.close(); return; }
+    const start=Math.floor(S.time), auto=S.playing;
+    let w=null;
+    try{
+      if('documentPictureInPicture' in window) w=await documentPictureInPicture.requestWindow({width:480,height:270});
+    }catch(e){w=null}
+    if(!w){ try{w=window.open('','lumen-mini','popup=yes,width=480,height=290');}catch(e){w=null} }
+    if(!w){ toast('A floating window couldn’t open here. Right-click the video twice and choose “Picture in picture”.'); return; }
+    const d=w.document, st=d.createElement('style');
+    d.title='Lumen';
+    st.textContent='html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}';
+    d.head.appendChild(st); d.body.appendChild(makeFrame(d,start,auto));
+    w.addEventListener('message',onMsg);
+    S.pip=w; setFrame(null); setMode('pip');
+    const back=()=>{
+      if(S.pip!==w) return;
+      S.pip=null; clearInterval(S.timer);
+      setFrame(makeFrame(document,Math.floor(S.time),S.playing)); setMode('play');
+    };
+    w.addEventListener('pagehide',back);
+    S.timer=setInterval(()=>{if(w.closed) back();},500);
+  }
+
+  $('#form').addEventListener('submit',e=>{
+    e.preventDefault();
+    const p=parse(input.value);
+    field.classList.toggle('bad',!p); hint.classList.toggle('err',!p);
+    if(!p){ hint.textContent='That doesn’t look like a YouTube link. Copy the address from the video’s page and try again.'; return; }
+    hint.textContent='Works with youtube.com, youtu.be, Shorts and live links. Start times are kept.';
+    load(p); input.blur();
+  });
+  input.addEventListener('input',()=>{field.classList.remove('bad');hint.classList.remove('err');});
+
+  $('#paste').addEventListener('click',async()=>{
+    try{
+      const t=await navigator.clipboard.readText();
+      input.value=t.trim(); $('#form').requestSubmit();
+    }catch(e){ input.focus(); toast('Your browser blocked clipboard access. Paste into the box with your keyboard.'); }
+  });
+  pipBtn.addEventListener('click',openPip);
+  $('#back').addEventListener('click',closePip);
+  copyBtn.addEventListener('click',async()=>{
+    const link='https://youtu.be/'+S.id+(S.time>5?'?t='+Math.floor(S.time):'');
+    try{await navigator.clipboard.writeText(link); toast('Link copied.');}
+    catch(e){toast('Couldn’t copy automatically. Copy the link from the video’s page.');}
+  });
+  clearBtn.addEventListener('click',()=>{
+    closePip(); S.id=null; setFrame(null); setMode('empty'); input.value=''; input.focus();
+  });
+  document.addEventListener('keydown',e=>{
+    if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!/^(INPUT|TEXTAREA)$/.test(e.target.tagName)&&S.id) openPip();
+  });
+  setMode('empty');
+})();
+</script>
+</body>
+</html>
